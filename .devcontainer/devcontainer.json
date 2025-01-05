@@ -15,7 +15,7 @@
 
     // Use 'postCreateCommand' to run commands after the container is created.
     "postCreateCommand": {
-        "dependencies": "npm install"
+        "dependencies": "go get ."
     },
 
     // Configure tool-specific properties.

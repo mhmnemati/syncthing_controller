@@ -1,1 +1,1 @@
-FROM ghcr.io/devcontainers/templates/go:4.1.0
+FROM mcr.microsoft.com/devcontainers/go:1.23

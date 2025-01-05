@@ -17,6 +17,9 @@
     "postCreateCommand": {
         "dependencies": "go get ."
     },
+    "postStartCommand": {
+        "syncthing": "nohup syncthing &"
+    },
 
     // Configure tool-specific properties.
     "customizations": {

@@ -3,57 +3,72 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	// "github.com/docker/docker/api/types/container"
-	// "github.com/docker/docker/api/types/events"
-	// "github.com/docker/docker/client"
 )
 
-func getIPs() ([]string, error) {
-	apiClient, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return nil, err
+func getAgents() ([]string, error) {
+	ctx := context.Background()
+	client, clientErr := client.NewClientWithOpts(client.FromEnv)
+	if clientErr != nil {
+		return nil, clientErr
 	}
-	defer apiClient.Close()
+	defer client.Close()
+
+	// tasks, tasksErr := client.TaskList(ctx, types.TaskListOptions{
+	// 	Filters: filters.NewArgs(
+	// 		filters.KeyValuePair{Key: "desired-state", Value: "running"},
+	// 		filters.KeyValuePair{Key: "label", Value: "syncthing.agent=true"},
+	// 	),
+	// })
+	// if tasksErr != nil {
+	// 	return nil, tasksErr
+	// }
+
+	tasks, tasksErr := client.ContainerList(ctx, container.ListOptions{
+		Filters: filters.NewArgs(
+		// filters.KeyValuePair{Key: "desired-state", Value: "running"},
+		// filters.KeyValuePair{Key: "label", Value: "syncthing.agent=true"},
+		),
+	})
+	if tasksErr != nil {
+		return nil, tasksErr
+	}
+
+	result := []string{}
+	for _, task := range tasks {
+		// result = append(result, task.NodeID)
+		fmt.Println(task.NetworkSettings.Networks["bridge"].IPAddress)
+		result = append(result, task.HostConfig.NetworkMode)
+	}
+	return result, nil
+}
+
+func getDevices() ([]string, error) {
+	resp, respErr := http.Get("")
+	if respErr != nil {
+		return nil, respErr
+	}
+	defer resp.Body.Close()
 
 	return nil, nil
 }
 
 func main() {
-
-	ips, _ := getIPs(apiClient)
-	ids, _ := getIDs()
-
-	listContainers(apiClient)
-
-	// services, err := apiClient.ServiceList(context.Background(), types.ServiceListOptions{})
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	containers, err := apiClient.ContainerList(context.Background(), container.ListOptions{All: true})
-	if err != nil {
-		panic(err)
+	agents, agentsErr := getAgents()
+	if agentsErr != nil {
+		log.Fatal(agentsErr)
 	}
 
-	for _, ctr := range containers {
-		fmt.Printf("%s %s (status: %s)\n", ctr.ID, ctr.Image, ctr.Status)
+	devices, devicesErr := getDevices()
+	if devicesErr != nil {
+		log.Fatal(devicesErr)
 	}
 
-	events, errs := apiClient.Events(context.Background(), events.ListOptions{})
-	for {
-		select {
-		case err := <-errs:
-			fmt.Println(err)
-		case event := <-events:
-			fmt.Println("------------------")
-			fmt.Println(event.Type)
-			fmt.Println(event.Action)
-			fmt.Println(event.Actor)
-			fmt.Println("------------------")
-		}
-	}
+	fmt.Println(nodes)
+	fmt.Println(devices)
 }
